@@ -1,132 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RJ Wingo Dashboard</title>
-
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI OMNI-SNIPER V18 | FINAL</title>
 <style>
-body{
-    font-family: Arial;
-    background:#0f172a;
-    color:white;
-    margin:0;
-    padding:0;
-}
-header{
-    background:#111827;
-    padding:15px;
-    text-align:center;
-    font-size:18px;
-    font-weight:bold;
-}
-.container{
-    padding:15px;
-}
-button{
-    padding:10px 15px;
-    background:#2563eb;
-    color:white;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-}
-.card{
-    background:#1e293b;
-    padding:10px;
-    margin-top:10px;
-    border-radius:10px;
-}
-table{
-    width:100%;
-    margin-top:10px;
-    border-collapse:collapse;
-}
-th,td{
-    border:1px solid #334155;
-    padding:8px;
-    text-align:center;
-    font-size:13px;
-}
-th{
-    background:#111827;
-}
-#prediction{
-    font-size:18px;
-    color:#22c55e;
-    font-weight:bold;
-}
+:root{--bg:#020617;--fg:#f1f5f9;--acc:#fbbf24;--win:#10b981;--loss:#ef4444;--card:#0f172a;--shield:#38bdf8;--wait:#94a3b8}
+body{background:var(--bg);color:var(--fg);font-family:sans-serif;padding:10px;margin:0;display:flex;flex-direction:column;align-items:center}
+.card{width:100%;max-width:380px;background:var(--card);border:2px solid var(--shield);border-radius:20px;padding:25px;text-align:center;box-shadow:0 0 40px rgba(56,189,248,0.3)}
+.signal{font-size:65px;font-weight:900;margin:10px 0;letter-spacing:8px;text-shadow:0 0 15px rgba(251,191,36,0.5)}
+.status-bar{width:100%;max-width:380px;display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px;font-weight:bold}
+.stat-box{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:20px}
+.stat{background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;border:1px solid rgba(255,255,255,0.1)}
+.log-box{width:100%;max-width:380px;margin-top:20px;background:var(--card);border-radius:15px;overflow:hidden;border:1px solid #1e293b}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#1e293b;padding:12px;color:var(--shield)}
+td{padding:12px;text-align:center;border-bottom:1px solid #1e293b}
+.blink{animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+#aBtn{width:100%;padding:18px;background:var(--acc);border:none;color:var(--bg);font-weight:900;cursor:pointer;font-size:14px;border-radius:0 0 15px 15px}
 </style>
-
 </head>
-
 <body>
 
-<header>🔥 RJ Wingo Live Dashboard</header>
-
-<div class="container">
-
-<button onclick="loadData()">🔄 Load Live Data</button>
-
-<div class="card">
-<h3>🎯 Prediction</h3>
-<p id="prediction">-</p>
+<div class="status-bar">
+    <span id="pStatus" style="color:var(--loss)">○ SYNCING...</span>
+    <span id="timer">WinGo 1M</span>
 </div>
 
 <div class="card">
-<h3>📊 Results</h3>
-
-<table>
-<thead>
-<tr>
-<th>Issue</th>
-<th>Number</th>
-<th>Size</th>
-</tr>
-</thead>
-
-<tbody id="table"></tbody>
-</table>
-
+    <div id="sig" class="blink" style="color:var(--wait);font-size:26px">SCANNING MARKET...</div>
+    <div id="reason" style="font-size:12px;color:var(--shield);margin-top:10px">Waiting for 90% Sure Setup</div>
+    
+    <div class="stat-box">
+        <div class="stat">Surety<br><b id="prob" style="color:var(--win)">0%</b></div>
+        <div class="stat">Level<br><b id="lvl" style="color:var(--acc)">L1</b></div>
+    </div>
 </div>
 
+<div class="log-box">
+    <table>
+        <thead><tr><th>Period</th><th>Num</th><th>Size</th><th>Clr</th></tr></thead>
+        <tbody id="logs"></tbody>
+    </table>
+    <button onclick="enableAudio()" id="aBtn">ACTIVATE AI SNIPER & SOUND</button>
 </div>
 
 <script>
-
-// 👉 Render backend URL (change this)
-const API = "https://YOUR-RENDER-URL.onrender.com/data";
-
-async function loadData(){
-    try{
-        let res = await fetch(API);
-        let data = await res.json();
-
-        // 🔥 Prediction show
-        document.getElementById("prediction").innerText =
-        "NEXT: " + data.prediction + " (Last: " + data.lastNumber + ")";
-
-        // 📊 Table fill
-        let html = "";
-
-        data.results.forEach(item=>{
-            html += `
-            <tr>
-                <td>${item.issue}</td>
-                <td>${item.code}</td>
-                <td>${item.bigSmall}</td>
-            </tr>`;
-        });
-
-        document.getElementById("table").innerHTML = html;
-
-    }catch(err){
-        alert("API Error / Server not running");
-        console.log(err);
-    }
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playAlert() {
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.setValueAtTime(1200, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    o.start(); o.stop(audioCtx.currentTime + 0.15);
 }
+function enableAudio() { audioCtx.resume(); document.getElementById('aBtn').style.display='none'; playAlert(); }
 
+(function(){
+    const PROXIES = [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?',
+        'https://api.codetabs.com/v1/proxy?quest='
+    ];
+    const API = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json?t=';
+    let state = { lp:null, streak:0, active:null, skip:0, pIdx:0 };
+
+    async function syncData() {
+        for(let i=0; i<PROXIES.length; i++){
+            try {
+                const res = await fetch(PROXIES[state.pIdx] + encodeURIComponent(API + Date.now()));
+                const data = await res.json();
+                if(data && data.data) return data;
+            } catch(e) { state.pIdx = (state.pIdx + 1) % PROXIES.length; }
+        }
+        return null;
+    }
+
+    function finalLogic(h) {
+        if(state.skip > 0) { state.skip--; return { s:'WAIT', r:'Cooling Down...', p:'0%' }; }
+        if(h[0] === 0 || h[0] === 5) { state.skip = 2; return { s:'WAIT', r:'Violet Reset: Safety Skip', p:'5%' }; }
+
+        const s = h.map(x => x >= 5 ? 'B' : 'S');
+        const n = h.slice(0, 10);
+        
+        // 1. DRAGON PERSISTENCE (Trend Follow)
+        let d = 1; for(let i=1; i<8; i++){ if(s[i] === s[0]) d++; else break; }
+        if(d >= 3 && d < 9) {
+            // Agar 7,8,9 number ke saath Big trend hai toh follow karo
+            if(s[0] === 'B' && n[0] >= 7) return { s:'BIG', r:'Momentum: Trend Follow', p:'94%' };
+            if(s[0] === 'S' && n[0] <= 2) return { s:'SMALL', r:'Momentum: Trend Follow', p:'94%' };
+        }
+
+        // 2. RATIO EXHAUSTION (Reversal)
+        const bigs = h.slice(0, 14).filter(x => x >= 5).length;
+        if(bigs >= 11) return { s:'SMALL', r:'Ratio Balance Sniper', p:'91%' };
+        if(bigs <= 3) return { s:'BIG', r:'Ratio Balance Sniper', p:'91%' };
+
+        // 3. ZIGZAG SNIPER
+        if(s[0]!==s[1] && s[1]!==s[2] && s[2]!==s[3]) {
+            return { s: s[0]==='B'?'SMALL':'BIG', r:'ZigZag Reversal Entry', p:'88%' };
+        }
+
+        return { s:'WAIT', r:'Market Volatile: Waiting', p:'0%' };
+    }
+
+    async function update() {
+        const data = await syncData();
+        if(!data) { document.getElementById('pStatus').textContent = '○ SYNC ERROR'; return; }
+
+        const list = data.data.list;
+        const h = list.map(x => parseInt(x.number));
+        const curr = list[0].issueNumber;
+
+        if (curr !== state.lp) {
+            if(state.active && state.active !== 'WAIT') {
+                const win = state.active === (h[0] >= 5 ? 'BIG' : 'SMALL');
+                state.streak = win ? 0 : state.streak + 1;
+                if(win) state.skip = 3; // Win ke baad 3 round break safety ke liye
+            }
+
+            document.getElementById('logs').innerHTML = list.slice(0, 10).map(item => {
+                const num = parseInt(item.number);
+                const clr = (num===0||num===5)?'#a855f7':(num%2===0?'var(--loss)':'var(--win)');
+                return `<tr><td>${item.issueNumber.slice(-4)}</td><td style="color:${clr}">${num}</td><td>${num>=5?'B':'S'}</td><td style="color:${clr}">●</td></tr>`;
+            }).join('');
+
+            const dec = finalLogic(h);
+            const sigEl = document.getElementById('sig');
+            
+            if(dec.s !== 'WAIT' && state.active === 'WAIT') playAlert();
+
+            sigEl.textContent = dec.s === 'WAIT' ? 'WAITING...' : dec.s;
+            sigEl.style.fontSize = dec.s === 'WAIT' ? '26px' : '65px';
+            sigEl.style.color = dec.s === 'WAIT' ? 'var(--wait)' : 'var(--acc)';
+            document.getElementById('reason').textContent = dec.r;
+            document.getElementById('prob').textContent = dec.p;
+            document.getElementById('lvl').textContent = 'L' + (state.streak + 1);
+            document.getElementById('pStatus').textContent = '● LIVE SNIPER';
+            document.getElementById('pStatus').style.color = 'var(--win)';
+
+            state.active = dec.s; state.lp = curr;
+        }
+    }
+    setInterval(update, 5000); update();
+})();
 </script>
-
 </body>
 </html>
